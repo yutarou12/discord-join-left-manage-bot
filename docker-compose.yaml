@@ -1,0 +1,17 @@
+# syntax=docker/docker-compose:1
+services:
+  bot:
+    restart: always
+    build:
+      context: .
+      args:
+        # 環境変数をビルド時の引数に渡す
+        - HOST_UID=${HOST_UID}
+        - HOST_GID=${HOST_GID}
+    volumes:
+      - ./:/app
+    working_dir: "/app"
+    tty: true
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
