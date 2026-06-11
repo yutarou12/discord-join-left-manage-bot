@@ -18,10 +18,19 @@ class DatetimeFormatter(logging.Formatter):
         return s
 
 
-class GuildDataModel(BaseModel):
-    notice_bool: bool
-    join_notice_channel_id: int
-    left_notice_channel_id: int
+class JoinLeftNoticeModel(BaseModel):
+    """
+    入室/退室通知のモデル
+
+    Attributes
+    ----------
+    function : bool, default False
+        入室/退室通知の機能が有効かどうか。
+    channel_id : str, default 0
+        入室/退室通知を送信するチャンネルのID。
+    """
+    function: bool = False
+    channel_id: int = 0
 
 
 def icon_convert(icon: Optional[Asset]) -> str:
