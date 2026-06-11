@@ -31,7 +31,7 @@ class Log(commands.Cog):
         self.bot.logger.info('--------------------------------')
 
         await self.bot.change_presence(
-            activity=Game(name='Discord Bot Database'),
+            activity=Game(name='入退室管理中'),
         )
 
 
