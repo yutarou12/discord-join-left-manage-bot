@@ -314,3 +314,39 @@ class ProductionDatabase:
         async with self.pool.acquire() as con:
             await con.execute("UPDATE message_embed_data SET join_message = $1 WHERE guild_id = $2", message_data, guild_id)
 
+    @check_connection
+    async def get_user_ban_count(self, user_id: int) -> int:
+        """
+        ユーザーのBanデータを取得する関数
+
+        Parameters
+        ----------
+        user_id : :class:`int`
+            ユーザーID
+
+        Returns
+        -------
+        count: :class:`int`
+            Banされた回数
+        """
+        async with self.pool.acquire() as con:
+            row = await con.fetchrow("SELECT * FROM ban_user_data WHERE user_id = $1", user_id)
+            if not row:
+                return 0
+            return row.get("count")
+
+    @check_connection
+    async def update_user_ban_count(self, user_id: int) -> None:
+        """
+        ユーザーのban回数を更新する関数
+
+        Parameters
+        ----------
+        user_id: :class:`int`
+            ユーザーID
+        """
+
+        data = await self.get_user_ban_count(user_id)
+        data += 1
+        async with self.pool.acquire() as con:
+            await con.execute("INSERT INTO ban_user_data (user_id, count) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET count = $2", user_id, data)

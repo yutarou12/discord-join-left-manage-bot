@@ -4,8 +4,48 @@ from datetime import datetime, timezone
 from discord import Embed
 from discord.ext import commands
 
-from libs.origin_handler import JoinLeftNoticeModel
 from libs.origin_handler import JoinLeftNoticeModel, icon_convert
+
+
+def danger_level(member, ban_count: int, level: str):
+    member_created_at = member.created_at
+    now = datetime.now(timezone.utc)
+    account_age = now - member_created_at
+
+    danger_level_count = 0
+
+    # 例: アカウントの年齢に応じて危険度を計算
+    if account_age.days <= 1:
+        danger_level_count += 2
+    elif account_age.days <= 5:
+        danger_level_count += 1
+    else:
+        danger_level_count += 0
+
+    # 過去のBanの回数に応じて危険度を計算
+    if ban_count >= 4:
+        danger_level_count += 3
+    elif ban_count >= 2:
+        danger_level_count += 2
+    elif ban_count >= 1:
+        danger_level_count += 1
+    else:
+        danger_level_count += 0
+
+    if danger_level_count >= 5:
+        if level == "level":
+            return '高'
+        return f'- アカウント年齢： `{account_age.days}` 日\n- 過去のBan回数： `{ban_count}` 回'
+    elif danger_level_count >= 3:
+        if level == "level":
+            return '中'
+        return f'- アカウント年齢： `{account_age.days}` 日\n- 過去のBan回数： `{ban_count}` 回'
+    else:
+        if level == "level":
+            return '低'
+        return f'- アカウント年齢： `{account_age.days}` 日\n- 過去のBan回数： `{ban_count}` 回'
+
+
 def create_embed(member, notice_type: str, ban_count: int):
     if notice_type == 'join':
         title = '入室通知'
