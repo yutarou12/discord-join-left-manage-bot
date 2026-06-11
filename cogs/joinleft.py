@@ -29,7 +29,7 @@ class JoinLeft(commands.Cog):
                 return None
             channel = _guild.system_channel
 
-        return await channel.send(f"> 📥{member.mention} さんが入室しました")
+        return await channel.send(f"> 📥{member.mention} ({member.id}) さんが入室しました")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -52,7 +52,7 @@ class JoinLeft(commands.Cog):
                 return None
             channel = _guild.system_channel
 
-        return await channel.send(f"> 📤{member.mention} さんが退出しました")
+        return await channel.send(f"> 📤{member.mention} ({member.id}) さんが退出しました")
 
 
 async def setup(bot):
