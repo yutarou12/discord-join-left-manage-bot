@@ -33,7 +33,56 @@ class JoinLeftNoticeModel(BaseModel):
     channel_id: int = 0
 
 
-def icon_convert(icon: Optional[Asset]) -> str:
+class JoinLeftNoticeEmbedMessageModel(BaseModel):
+    """
+    入室/退室通知の埋め込みメッセージのモデル
+
+    Attributes
+    ----------
+    function : bool, default False
+        埋め込みメッセージの機能が有効かどうか。
+    join_message : str, default None
+        入室通知のメッセージ内容。
+    left_message : str, default None
+        退室通知のメッセージ内容。
+    """
+    function: bool = False
+    join_message: str | None = None
+    left_message: str | None = None
+
+
+class JoinLeftNoticeTextMessageModel(BaseModel):
+    """
+    入室/退室通知のテキストメッセージのモデル
+
+    Attributes
+    ----------
+    function : bool, default False
+        テキストメッセージの機能が有効かどうか。
+    join_message : str, default None
+        入室通知のメッセージ内容。
+    left_message : str, default None
+        退室通知のメッセージ内容。
+    """
+    function: bool = False
+    join_message: str | None = None
+    left_message: str | None = None
+
+
+def icon_convert(icon: Optional[Asset] | None) -> str:
+    """
+    ユーザーのアイコンがない場合、デフォルトのアイコンURLを返す関数
+
+    Parameters
+    ---------
+    icon: Optional[Asset]
+        ユーザーのアイコン
+
+    Returns
+    -------
+    icon_url: :class:`str`
+        アイコンのURL
+    """
     if not icon:
         return 'https://cdn.discordapp.com/embed/avatars/0.png'
     else:

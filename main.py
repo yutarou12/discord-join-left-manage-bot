@@ -9,6 +9,7 @@ from discord.app_commands import AppCommandError
 from discord.ext import commands
 
 import libs.env as env
+from libs.database import ProductionDatabase
 from libs.origin_handler import DatetimeFormatter, icon_convert
 
 extensions_list = [f[:-3] for f in os.listdir("./cogs") if f.endswith(".py")]
@@ -101,6 +102,8 @@ if __name__ == '__main__':
     if not env.DISCORD_BOT_TOKEN:
         raise RuntimeError("DISCORD_BOT_TOKEN を .env に設定してください。")
 
+    db = ProductionDatabase()
+
     bot = MyBot(
         command_prefix=commands.when_mentioned_or('lm.'),
         intents=discord.Intents.all(),
@@ -109,5 +112,6 @@ if __name__ == '__main__':
     )
 
     bot.logger = logger
+    bot.db = db
 
     bot.run(env.DISCORD_BOT_TOKEN, log_handler=None)
