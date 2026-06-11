@@ -34,24 +34,6 @@ COPY --from=builder \
 
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
-ARG HOST_UID=1000
-ARG HOST_GID=1000
-
-RUN <<EOF bash -eux
-if ! getent group ${HOST_GID} > /dev/null; then
-    groupadd -g ${HOST_GID} appgroup;
-fi
-useradd -u ${HOST_UID} -g ${HOST_GID} -m appuser
-# Change ownership of /src directory to appuser
-chown -R appuser:appgroup .
-EOF
-
-COPY --chown=appuser:appgroup /app/ .
-
-# Switch to the non-privileged user to run the application.
-USER appuser
-
 # Run the application.
 CMD ["python", "main.py"]
