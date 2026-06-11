@@ -48,7 +48,7 @@ useradd -u ${HOST_UID} -g ${HOST_GID} -m appuser
 chown -R appuser:appgroup .
 EOF
 
-COPY --chown=appuser:appgroup app/ .
+COPY --chown=appuser:appgroup /app/ .
 
 # Switch to the non-privileged user to run the application.
 USER appuser
