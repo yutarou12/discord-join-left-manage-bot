@@ -29,6 +29,10 @@ class ProductionDatabase:
             await conn.execute(
                 "CREATE TABLE IF NOT EXISTS message_embed_data (guild_id bigint NOT NULL PRIMARY KEY, join_message text, left_message text)"
             )
+            # 導入サーバーでのBanデータの収集
+            await conn.execute(
+                "CREATE TABLE IF NOT EXISTS ban_user_data (user_id bigint NOT NULL, count int NOT NULL, PRIMARY KEY (user_id))"
+            )
 
         return self.pool
 
