@@ -1,0 +1,1 @@
+CREATE DATABASE join_left_manage_db;
