@@ -2,7 +2,7 @@ import asyncpg
 from functools import wraps
 
 import libs.env as env
-from libs.origin_handler import JoinLeftNoticeModel, JoinLeftNoticeEmbedMessageModel, JoinLeftNoticeTextMessageModel
+from libs.origin_handler import JoinLeftNoticeModel, JoinLeftNoticeEmbedMessageModel, JoinLeftNoticeTextMessageModel, HoneyPotModel
 
 
 class ProductionDatabase:
@@ -32,6 +32,18 @@ class ProductionDatabase:
             # 導入サーバーでのBanデータの収集
             await conn.execute(
                 "CREATE TABLE IF NOT EXISTS ban_user_data (user_id bigint NOT NULL, count int NOT NULL, PRIMARY KEY (user_id))"
+            )
+            # ハニーポット機能のチャンネルID
+            await conn.execute(
+                "CREATE TABLE IF NOT EXISTS honey_pot_channel (guild_id bigint NOT NULL PRIMARY KEY, channel_id bigint NOT NULL)"
+            )
+            # ハニーポットでBANした際のログチャンネルID
+            await conn.execute(
+                "CREATE TABLE IF NOT EXISTS honey_pot_log_channel (guild_id bigint NOT NULL PRIMARY KEY, channel_id bigint NOT NULL)"
+            )
+            # ハニーポット機能の除外するロール
+            await conn.execute(
+                "CREATE TABLE IF NOT EXISTS honey_pot_ignore_role (guild_id bigint NOT NULL, role_id bigint NOT NULL, PRIMARY KEY (guild_id, role_id))"
             )
 
         return self.pool
@@ -354,3 +366,166 @@ class ProductionDatabase:
         data += 1
         async with self.pool.acquire() as con:
             await con.execute("INSERT INTO ban_user_data (user_id, count) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET count = $2", user_id, data)
+
+    @check_connection
+    async def get_honey_pot_channel(self, guild_id: int) -> HoneyPotModel:
+        """
+        ハニーポットチャンネルのIDを取得する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+
+        """
+        async with self.pool.acquire() as con:
+            row = await con.fetchrow("SELECT * FROM honey_pot_channel WHERE guild_id = $1", guild_id)
+            data = HoneyPotModel()
+            if not row:
+                return data
+            data.function = True
+            data.channel_id = row.get("channel_id") or 0
+            return data
+
+    @check_connection
+    async def add_honey_pot_channel(self, guild_id: int, channel_id: int) -> None:
+        """
+        ハニーポットチャンネルを追加する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        channel_id: :class:`int`
+            ハニーポットチャンネルのID
+        """
+        async with self.pool.acquire() as con:
+            await con.execute("INSERT INTO honey_pot_channel (guild_id, channel_id) VALUES ($1, $2) ON CONFLICT (guild_id) DO NOTHING", guild_id, channel_id)
+
+    @check_connection
+    async def update_honey_pot_channel(self, guild_id: int, channel_id: int) -> None:
+        """
+        ハニーポットチャンネルを更新する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        channel_id: :class:`int`
+            ハニーポットチャンネルのID
+        """
+        async with self.pool.acquire() as con:
+            await con.execute("UPDATE honey_pot_channel SET channel_id = $1 WHERE guild_id = $2", channel_id, guild_id)
+
+    @check_connection
+    async def remove_honey_pot_channel(self, guild_id: int) -> None:
+        """
+        ハニーポットチャンネルを削除する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        """
+        async with self.pool.acquire() as con:
+            await con.execute("DELETE FROM honey_pot_channel WHERE guild_id = $1", guild_id)
+
+    @check_connection
+    async def get_honey_pot_log_channel(self, guild_id: int) -> HoneyPotModel:
+        """
+        ハニーポットでBANした際のログチャンネルのIDを取得する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+
+        """
+        async with self.pool.acquire() as con:
+            row = await con.fetchrow("SELECT * FROM honey_pot_log_channel WHERE guild_id = $1", guild_id)
+            data = HoneyPotModel()
+            if not row:
+                return data
+            data.function = True
+            data.channel_id = row.get("channel_id") or 0
+            return data
+
+    @check_connection
+    async def add_honey_pot_log_channel(self, guild_id: int, channel_id: int) -> None:
+        """
+        ハニーポットでBANした際のログチャンネルを追加する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        channel_id: :class:`int`
+            ハニーポットでBANした際のログチャンネルのID
+        """
+        async with self.pool.acquire() as con:
+            await con.execute("INSERT INTO honey_pot_log_channel (guild_id, channel_id) VALUES ($1, $2) ON CONFLICT (guild_id) DO NOTHING", guild_id, channel_id)
+
+    @check_connection
+    async def update_honey_pot_log_channel(self, guild_id: int, channel_id: int) -> None:
+        """
+        ハニーポットでBANした際のログチャンネルを更新する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        channel_id: :class:`int`
+            ハニーポットでBANした際のログチャンネルのID
+        """
+        async with self.pool.acquire() as con:
+            await con.execute("UPDATE honey_pot_log_channel SET channel_id = $1 WHERE guild_id = $2", channel_id, guild_id)
+
+    @check_connection
+    async def remove_honey_pot_log_channel(self, guild_id: int) -> None:
+        """
+        ハニーポットでBANした際のログチャンネルを削除する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        """
+        async with self.pool.acquire() as con:
+            await con.execute("DELETE FROM honey_pot_log_channel WHERE guild_id = $1", guild_id)
+
+    @check_connection
+    async def get_honey_pot_ignore_roles(self, guild_id: int) -> list[int]:
+        """
+        ハニーポット機能の除外するロールのIDを取得する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+
+        Returns
+        -------
+        role_ids: list[:class:`int`]
+            ハニーポット機能の除外するロールのIDのリスト
+        """
+        async with self.pool.acquire() as con:
+            rows = await con.fetch("SELECT * FROM honey_pot_ignore_role WHERE guild_id = $1", guild_id)
+            if not rows:
+                return []
+            return [row.get("role_id") for row in rows]
+
+    @check_connection
+    async def add_honey_pot_ignore_role(self, guild_id: int, role_ids: list[int]) -> None:
+        """
+        ハニーポット機能の除外するロールを追加する関数
+
+        Parameters
+        ----------
+        guild_id: :class:`int`
+            サーバーID
+        role_ids: :class:`list[int]`
+            除外するロールのID
+        """
+        async with self.pool.acquire() as con:
+            for role_id in role_ids:
+                await con.execute("INSERT INTO honey_pot_ignore_role (guild_id, role_id) VALUES ($1, $2) ON CONFLICT (role_id) DO NOTHING", guild_id, role_id)
