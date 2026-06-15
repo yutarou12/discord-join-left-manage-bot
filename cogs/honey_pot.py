@@ -1,4 +1,4 @@
-from discord import Embed
+from discord import Embed, Colour, Message
 from discord.ext import commands
 
 from libs.origin_handler import icon_convert
@@ -11,7 +11,7 @@ class HoneyPot(commands.Cog):
         self.db: ProductionDatabase = bot.db
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: Message):
         """
         ハニーポット機能：指定したチャンネルにメッセージが送信されると、強制的にBanされる機能。
         スパムユーザーが入室後、詐欺のメッセージ等を全チャンネルに送信するために、それを検知してBanするための機能。
@@ -36,29 +36,32 @@ class HoneyPot(commands.Cog):
                 if channel is None:
                     channel = await message.guild.fetch_channel(data.channel_id)
 
-                    if channel is not None:
-                        embed = Embed(title="ハニーポット検知", description=f"{message.author.mention} さんがハニーポットチャンネルにメッセージを送信したため、Banされました。")
-                        embed.set_thumbnail(url=icon_convert(message.author.avatar))
-                        embed.add_field(name="ユーザーID", value=f"`{message.author.id}`", inline=False)
-                        embed.add_field(name="チャンネル", value=f"{message.channel.mention} (`{message.channel.id}`)", inline=False)
-                        embed.add_field(name="メッセージ内容ログID", value=f"`{message.id}`", inline=False)
+                if channel is not None:
+                    embed = Embed(title="ハニーポット 検知", description=f"```\n{message.author.display_name} をBanしました。\n```",
+                                  colour=Colour.red())
+                    embed.set_thumbnail(url=icon_convert(message.author.avatar))
+                    embed.add_field(name="ユーザーID", value=f"`{message.author.id}`", inline=False)
+                    embed.add_field(name="メッセージ内容ログID", value=f"`{message.id}`", inline=False)
 
-                        embed_log = Embed(title="ハニーポットログ")
-                        if not message.attachments:
-                            if len(message.content) > 4000:
-                                log_msg = message.content[:4000] + "..."
-                            else:
-                                log_msg = message.content
-                            embed_log.description = f"```\n{log_msg}\n```"
+                    embed_log = Embed(title="ハニーポット ログ", colour=Colour.red())
+                    if not message.attachments:
+                        if len(message.content) > 4000:
+                            log_msg = message.content[:4000] + "..."
                         else:
+                            log_msg = message.content
+                        embed_log.description = f"```\n{log_msg}\n```"
+                    else:
+                        if message.content:
                             log_msg = f"```\n{message.content}\n```"
-                            for attachment in message.attachments:
-                                log_msg += f"\n- [{attachment.filename}]({attachment.url})"
-                            embed_log.description = log_msg
-                            embed_log.set_image(url=message.attachments[0].url)
-                        embed_log.set_footer(text=f"ログID：{message.id}", icon_url=icon_convert(message.guild.icon))
+                        else:
+                            log_msg = ""
+                        for attachment in message.attachments:
+                            log_msg += f"\n- [{attachment.filename}]({attachment.url})"
+                        embed_log.description = log_msg
+                        embed_log.set_image(url=message.attachments[0].url)
+                    embed_log.set_footer(text=f"ログID：{message.id}", icon_url=icon_convert(message.author.avatar))
 
-                        await channel.send(embeds=[embed,embed_log])
+                    await channel.send(embeds=[embed,embed_log])
 
         return await message.guild.ban(message.author, delete_message_days=1, reason="ハニーポットチャンネルにメッセージを送信したため。")
 
