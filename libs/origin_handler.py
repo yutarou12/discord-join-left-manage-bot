@@ -70,6 +70,21 @@ class JoinLeftNoticeTextMessageModel(BaseModel):
     left_message: str | None = None
 
 
+class HoneyPotModel(BaseModel):
+    """
+    ハニーポットのモデル
+
+    Attributes
+    ----------
+    function : bool, default False
+        ハニーポット機能が有効かどうか。
+    channel_id : str, default 0
+        ハニーポットを検知するチャンネルのID。
+    """
+    function: bool = False
+    channel_id: int = 0
+
+
 def icon_convert(icon: Optional[Asset] | None) -> str:
     """
     ユーザーのアイコンがない場合、デフォルトのアイコンURLを返す関数
