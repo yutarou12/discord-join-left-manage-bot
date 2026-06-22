@@ -165,6 +165,44 @@ class ProductionDatabase:
             await con.execute("DELETE FROM left_notice_bool WHERE guild_id = $1", guild_id)
 
     @check_connection
+    async def toggle_join_notice(self, guild_id: int) -> JoinLeftNoticeModel | None:
+        """
+        Discordサーバーへの入室通知の設定を切り替える関数
+
+        Parameters
+        ----------
+        guild_id : :class:`int`
+            サーバーID
+        """
+        async with self.pool.acquire() as con:
+            row = await self.get_join_notice(guild_id)
+            if row.function:
+                await con.execute("DELETE FROM join_notice_bool WHERE guild_id = $1", guild_id)
+            else:
+                await con.execute("INSERT INTO join_notice_bool (guild_id) VALUES ($1)", guild_id)
+            new = await self.get_join_notice(guild_id)
+            return new
+
+    @check_connection
+    async def toggle_left_notice(self, guild_id: int) -> JoinLeftNoticeModel | None:
+        """
+        Discordサーバーからの退室通知の設定を切り替える関数
+
+        Parameters
+        ----------
+        guild_id : :class:`int`
+            サーバーID
+        """
+        async with self.pool.acquire() as con:
+            row = await self.get_left_notice(guild_id)
+            if row.function:
+                await con.execute("DELETE FROM left_notice_bool WHERE guild_id = $1", guild_id)
+            else:
+                await con.execute("INSERT INTO left_notice_bool (guild_id) VALUES ($1)", guild_id)
+            new = await self.get_left_notice(guild_id)
+            return new
+
+    @check_connection
     async def update_join_notice_channel(self, guild_id: int, channel_id: int) -> None:
         """
         入室時の通知チャンネルを更新する関数
